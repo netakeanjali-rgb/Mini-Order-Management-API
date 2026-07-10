@@ -70,6 +70,43 @@ REDIS_PORT=6379
 
 If Redis is not available, use `CACHE_STORE=database` as a fallback.
 
+## Docker Setup (Optional)
+
+Run the full stack with Docker:
+
+```bash
+docker compose up --build
+```
+
+This starts:
+- **app** — Laravel API at http://localhost:8000
+- **queue** — background order processing worker
+- **mysql** — database (host port `3308` to avoid XAMPP conflicts)
+- **redis** — cache store
+
+Seed sample data after containers are up:
+
+```bash
+docker compose exec app php artisan db:seed
+```
+
+Run tests inside Docker:
+
+```bash
+docker compose exec app php artisan test
+```
+
+Stop containers:
+
+```bash
+docker compose down
+```
+
+Docker environment defaults:
+- MySQL password: `secret`
+- Database: `mini_order_db`
+- Redis host: `redis`
+
 ## Default Users
 
 | Email | Password | Role |

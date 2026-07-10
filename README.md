@@ -1,58 +1,221 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Mini Order Management API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel REST API for managing products and placing orders. Built as a take-home backend assignment covering authentication, CRUD, order processing, and R&D features.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Laravel 13
+- PHP 8.3+
+- MySQL
+- JWT Authentication (`php-open-source-saver/jwt-auth`)
+- Redis (caching)
+- Database queues
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Setup
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 1. Clone and install dependencies
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/netakeanjali-rgb/Mini-Order-Management-API.git
+cd Mini-Order-Management-API
+composer install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Environment configuration
 
-## Contributing
+```bash
+cp .env.example .env
+php artisan key:generate
+php artisan jwt:secret
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Update `.env` with your database credentials:
 
-## Code of Conduct
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=mini_order_db
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 3. Run migrations and seeders
 
-## Security Vulnerabilities
+```bash
+php artisan migrate --seed
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 4. Start the application
+
+```bash
+php artisan serve
+```
+
+### 5. Start the queue worker (required for order processing)
+
+```bash
+php artisan queue:work
+```
+
+### 6. Redis (optional but recommended for caching)
+
+Install and start Redis, then set in `.env`:
+
+```env
+CACHE_STORE=redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+```
+
+If Redis is not available, use `CACHE_STORE=database` as a fallback.
+
+## Default Users
+
+| Email | Password | Role |
+|-------|----------|------|
+| `test@example.com` | `password` | user |
+| `admin@example.com` | `password` | admin |
+
+## API Endpoints
+
+### Authentication
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/register` | No | Register a new user |
+| POST | `/api/login` | No | Login and receive JWT token |
+| POST | `/api/logout` | Yes | Invalidate JWT token |
+
+### Products
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/products` | No | List products (supports search filters) |
+| GET | `/api/products/{id}` | No | Get single product |
+| POST | `/api/products` | Admin | Create product |
+| PUT | `/api/products/{id}` | Admin | Update product |
+| DELETE | `/api/products/{id}` | Admin | Delete product |
+
+**Product search filters** (query params on `GET /api/products`):
+
+| Parameter | Description |
+|-----------|-------------|
+| `search` | Filter by product name |
+| `min_price` | Minimum price |
+| `max_price` | Maximum price |
+| `min_stock` | Minimum stock |
+| `sort_by` | Sort field: `name`, `price`, `stock`, `created_at` |
+| `sort_order` | `asc` or `desc` |
+
+Example:
+
+```
+GET /api/products?search=mouse&min_price=10&max_price=50&sort_by=price&sort_order=asc
+```
+
+### Orders
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/orders` | Yes | Place an order (queued processing) |
+| GET | `/api/orders` | Yes | List logged-in user's orders |
+| GET | `/api/orders/{id}` | Yes | Get order details |
+
+**Create order example:**
+
+```json
+{
+  "items": [
+    {"product_id": 1, "quantity": 2},
+    {"product_id": 2, "quantity": 1}
+  ]
+}
+```
+
+## R&D Features
+
+### 1. Redis Caching for Products
+
+Product list and single product responses are cached for 1 hour using Laravel's `Cache` facade. A cache version key is incremented whenever a product is created, updated, or deleted, which invalidates all list caches. Individual product caches are cleared on update/delete.
+
+**Why:** Reduces database queries for frequently accessed product data.
+
+**Config:** Set `CACHE_STORE=redis` in `.env`.
+
+### 2. API Rate Limiting
+
+All API routes are limited to **60 requests per minute** per user (or per IP for unauthenticated requests).
+
+**Implementation:** Laravel's `throttle:api` middleware with a custom rate limiter in `AppServiceProvider`.
+
+### 3. Queue for Order Processing
+
+When a user places an order, the API immediately creates a `pending` order and dispatches a `ProcessOrderJob` to the queue. The job handles:
+
+- Stock validation with row locking
+- Stock reduction
+- Total price calculation
+- Order item creation
+- Status update to `completed` or `failed`
+
+After the order is completed, a separate `SendOrderEmailJob` is dispatched so email failures only retry the email — not the order processing.
+
+**Why:** Keeps the API response fast and moves heavy work to a background worker.
+
+**Requires:** `php artisan queue:work` running with `QUEUE_CONNECTION=database`.
+
+### 4. Email Notification After Order
+
+After an order is successfully processed, `SendOrderEmailJob` sends an `OrderPlaced` mailable to the user with order details.
+
+**Dev setup:** `MAIL_MAILER=log` writes emails to `storage/logs/laravel.log`.
+
+### 5. Product Search Filters
+
+The product list endpoint supports filtering by name, price range, stock, and custom sorting via query parameters (see API Endpoints above).
+
+## Authentication Usage
+
+Include the JWT token in the `Authorization` header:
+
+```
+Authorization: Bearer YOUR_TOKEN_HERE
+```
+
+## Swagger / OpenAPI Documentation
+
+Laravel does not include Swagger by default. This project uses the **[L5-Swagger](https://github.com/DarkaOnLine/L5-Swagger)** package.
+
+**View docs UI:** [http://127.0.0.1:8000/api/documentation](http://127.0.0.1:8000/api/documentation)
+
+**Regenerate docs** after changing API annotations:
+
+```bash
+php artisan l5-swagger:generate
+```
+
+To test protected endpoints in Swagger UI:
+1. Call `POST /api/login` and copy the `token` from the response
+2. Click **Authorize** at the top of Swagger UI
+3. Enter: `Bearer YOUR_TOKEN_HERE`
+
+Default admin login for testing: `admin@example.com` / `password`
+
+## Project Structure
+
+```
+app/
+├── Http/
+│   ├── Controllers/     # Auth, Product, Order controllers
+│   ├── Middleware/       # Admin authorization
+│   ├── Requests/         # Form request validation
+│   └── Resources/        # API JSON transformers
+├── Jobs/                 # ProcessOrderJob, SendOrderEmailJob (queued)
+├── Mail/                 # OrderPlaced notification
+└── Models/               # User, Product, Order, OrderItem
+```
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT

@@ -202,6 +202,14 @@ To test protected endpoints in Swagger UI:
 
 Default admin login for testing: `admin@example.com` / `password`
 
+## Running Tests
+
+PHPUnit feature tests use an in-memory SQLite database and run queued jobs synchronously.
+
+```bash
+php artisan test
+```
+
 ## Project Structure
 
 ```

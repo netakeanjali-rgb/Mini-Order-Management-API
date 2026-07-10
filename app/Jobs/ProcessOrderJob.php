@@ -73,8 +73,6 @@ class ProcessOrderJob implements ShouldQueue
             SendOrderEmailJob::dispatch($this->order);
         } catch (\RuntimeException $e) {
             $this->order->update(['status' => 'failed']);
-
-            throw $e;
         }
     }
 }

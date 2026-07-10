@@ -1,0 +1,542 @@
+{
+	"info": {
+		"_postman_id": "mini-order-management-api",
+		"name": "Mini Order Management API",
+		"description": "Postman collection for the Mini Order Management API.\n\nDefault users:\n- test@example.com / password (user)\n- admin@example.com / password (admin)\n\nRun Login or Login as Admin first to set the token automatically.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "product_id",
+			"value": "1"
+		},
+		{
+			"key": "order_id",
+			"value": "1"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"register"
+							]
+						},
+						"description": "Register a new user. New users always get the `user` role."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const json = pm.response.json();",
+									"    if (json.token) {",
+									"        pm.collectionVariables.set('token', json.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"login"
+							]
+						},
+						"description": "Login as a regular user and save JWT token to collection variable."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const json = pm.response.json();",
+									"    if (json.token) {",
+									"        pm.collectionVariables.set('token', json.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login as Admin",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"login"
+							]
+						},
+						"description": "Login as admin for product create/update/delete endpoints."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const json = pm.response.json();",
+									"    if (json.token) {",
+									"        pm.collectionVariables.set('token', json.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"logout"
+							]
+						},
+						"description": "Invalidate the current JWT token."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set('token', '');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "List Products",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products"
+							]
+						},
+						"description": "List all products. No authentication required."
+					}
+				},
+				{
+					"name": "List Products with Filters",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products?search=mouse&min_price=10&max_price=50&sort_by=price&sort_order=asc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "mouse"
+								},
+								{
+									"key": "min_price",
+									"value": "10"
+								},
+								{
+									"key": "max_price",
+									"value": "50"
+								},
+								{
+									"key": "min_stock",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "sort_by",
+									"value": "price"
+								},
+								{
+									"key": "sort_order",
+									"value": "asc"
+								}
+							]
+						},
+						"description": "Search and filter products by name, price, stock, and sorting."
+					}
+				},
+				{
+					"name": "Get Product",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Get a single product by ID. No authentication required."
+					}
+				},
+				{
+					"name": "Create Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Headphones\",\n  \"description\": \"Wireless noise cancelling headphones\",\n  \"price\": 99.99,\n  \"stock\": 15\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products"
+							]
+						},
+						"description": "Create a product. Admin authentication required."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const json = pm.response.json();",
+									"    if (json.product && json.product.id) {",
+									"        pm.collectionVariables.set('product_id', json.product.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Product",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Product Name\",\n  \"price\": 49.99,\n  \"stock\": 20\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Update a product. Admin authentication required."
+					}
+				},
+				{
+					"name": "Delete Product",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Delete a product. Admin authentication required. Cannot delete products with existing orders."
+					}
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Place Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 1\n    },\n    {\n      \"product_id\": 2,\n      \"quantity\": 1\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"orders"
+							]
+						},
+						"description": "Place an order. Processing is queued — run `php artisan queue:work` in terminal."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 202) {",
+									"    const json = pm.response.json();",
+									"    if (json.order && json.order.id) {",
+									"        pm.collectionVariables.set('order_id', json.order.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "My Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"orders"
+							]
+						},
+						"description": "List orders for the logged-in user."
+					}
+				},
+				{
+					"name": "Get Order Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders/{{order_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								"{{order_id}}"
+							]
+						},
+						"description": "Get details for a specific order. User can only view their own orders."
+					}
+				}
+			]
+		}
+	]
+}
